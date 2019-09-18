@@ -287,8 +287,7 @@
   (check-type n integer)
   (let* ((mat-size (expt 2 n))
          (operating-vector (make-array mat-size :initial-element (/ mat-size))))
-    (make-row-major-matrix
-     mat-size mat-size
+    (magicl:from-list
      (loop
        :for index :in (nconc (gray-code-toggles n) (list n))
        :append (progn
@@ -297,7 +296,8 @@
                        :when (logbitp (1- index) j)
                          :do (setf (aref operating-vector j)
                                    (- (aref operating-vector j))))
-                 (coerce operating-vector 'list))))))
+                 (coerce operating-vector 'list)))
+     (list mat-size mat-size))))
 
 #+#:pedagogical-purposes-only
 (defun ucr-explode-instr (instr)

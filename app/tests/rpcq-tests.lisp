@@ -60,7 +60,7 @@
           (setf mat1 (quil::scale-out-matrix-phases mat1 mat2))
           (is (> 1d0 (rpcq::|NativeQuilMetadata-program_fidelity|
                             (rpcq::|NativeQuilResponse-metadata| server-response))))
-          (is (quil::matrix-equality mat1 mat2)))))))
+          (is (magicl:= mat1 mat2)))))))
 
 (deftest test-quil-to-native-quil-protoquil-endpoint ()
   "Test that the \"quil-to-native-quil\" endpoint will compile protoquil when given :PROTOQUIL T."
@@ -196,7 +196,7 @@ H 0")
            (request (make-instance 'rpcq::|RewriteArithmeticRequest|
                                    :|quil| quil))
            (response (rpcq:rpc-call client "rewrite-arithmetic" request)))
-      (is (quil::matrix-equality
+      (is (magicl:=
            (quil:parsed-program-to-logical-matrix (quil:parse-quil quil))
            (quil:parsed-program-to-logical-matrix
             (quil:parse-quil (rpcq::|RewriteArithmeticResponse-quil| response))))))))
@@ -227,4 +227,4 @@ TEST 0 1
                                 (quil::make-matrix-from-quil
                                  (coerce (quil:parsed-program-executable-code cpp) 'list)))
         (setf mat1 (quil::scale-out-matrix-phases mat1 mat2))
-        (is (quil::matrix-equality mat1 mat2))))))
+        (is (magicl:= mat1 mat2))))))

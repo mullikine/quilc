@@ -455,21 +455,23 @@ other's."
                   (reduced-matrix
                    (kron-matrix-up (make-matrix-from-quil reduced-instructions
                                                           :relabeling relabeling)
-                                   (ilog2 (magicl:matrix-rows stretched-matrix))))
+                                   (ilog2 (magicl:nrows stretched-matrix))))
                   (reduced-decompiled-matrix
                    (kron-matrix-up (make-matrix-from-quil reduced-decompiled-instructions
                                                           :relabeling relabeling)
-                                   (ilog2 (magicl:matrix-rows stretched-matrix)))))
-             (assert (matrix-equality stretched-matrix
-                                      (scale-out-matrix-phases reduced-matrix
-                                                               stretched-matrix)))
+                                   (ilog2 (magicl:nrows stretched-matrix)))))
+             (assert (magicl:= stretched-matrix
+                               (scale-out-matrix-phases reduced-matrix
+                                                        stretched-matrix)))
              (when decompiled-instructions
-               (assert (matrix-equality stretched-matrix
-                                        (scale-out-matrix-phases decompiled-matrix
-                                                                 stretched-matrix)))
-               (assert (matrix-equality stretched-matrix
-                                        (scale-out-matrix-phases reduced-decompiled-matrix
-                                                                 stretched-matrix))))))
+               (assert (magicl:= stretched-matrix
+                                 (scale-out-matrix-phases decompiled-matrix
+                                                          stretched-matrix)
+                                 +double-comparison-threshold-loose+))
+               (assert (magicl:= stretched-matrix
+                                 (scale-out-matrix-phases reduced-decompiled-matrix
+                                                          stretched-matrix)
+                                 +double-comparison-threshold-loose+)))))
 
          (check-quil-agrees-as-states (start-wf final-wf wf-qc)
            (let* ((final-wf-reduced-instrs (nondestructively-apply-instrs-to-wf
@@ -502,19 +504,19 @@ other's."
 
          (check-quil-is-near-as-matrices ()
            (a:when-let ((stretched-matrix (make-matrix-from-quil instructions)))
-             (let* ((n (ilog2 (magicl:matrix-rows stretched-matrix)))
+             (let* ((n (ilog2 (magicl:nrows stretched-matrix)))
                     (reduced-matrix
                      (kron-matrix-up (make-matrix-from-quil reduced-instructions)
-                                     (ilog2 (magicl:matrix-rows stretched-matrix))))
+                                     (ilog2 (magicl:nrows stretched-matrix))))
                     (reduced-decompiled-matrix
                      (kron-matrix-up (make-matrix-from-quil reduced-decompiled-instructions)
-                                     (ilog2 (magicl:matrix-rows stretched-matrix)))))
-               (assert (matrix-equality stretched-matrix
+                                     (ilog2 (magicl:nrows stretched-matrix)))))
+               (assert (magicl:= stretched-matrix
                                         (scale-out-matrix-phases reduced-matrix stretched-matrix)))
                (when decompiled-instructions
-                 (let* ((prod (magicl:multiply-complex-matrices
+                 (let* ((prod (magicl:@
                                reduced-matrix (magicl:dagger reduced-decompiled-matrix)))
-                        (tr (matrix-trace prod))
+                        (tr (magicl:trace prod))
                         (trace-fidelity (/ (+ n (abs (* tr tr)))
                                            (+ n (* n n))))
                         (ls-reduced (make-lscheduler))

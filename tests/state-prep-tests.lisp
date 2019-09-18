@@ -6,17 +6,17 @@
 
 (defun wf-to-matrix (wf)
   "Convert a sequence WF to a corresponding column vector."
-  (magicl:make-matrix :rows (length wf)
-                      :cols 1
-                      :data (copy-seq wf)))
+  (magicl:from-array (copy-seq wf)
+                     (list (length wf) 1)))
 
 (defun check-state-prep (source-wf target-wf matrix)
   "Checks whether SOURCE-WF maps to TARGET-WF under the specified MATRIX."
-  (let* ((result (magicl:multiply-complex-matrices matrix
-                                                   (wf-to-matrix source-wf)))
-         (prefactor (/ (aref target-wf 0) (magicl:ref result 0 0))))
-    (is (quil::matrix-equality (magicl:scale prefactor result)
-                               (wf-to-matrix target-wf)))))
+  (let* ((result (magicl:@ matrix
+                           (wf-to-matrix source-wf)))
+         (prefactor (/ (aref target-wf 0) (magicl:tref result 0 0))))
+    (is (magicl:= (magicl:scale result prefactor)
+                  (wf-to-matrix target-wf)
+                  quil::+double-comparison-threshold-loose+))))
 
 (deftest test-state-prep-formation ()
   "Checks that STATE-PREP-APPLICATION (with SOURCE-WF in the ground state) correctly compiles into native instructions."
@@ -68,7 +68,7 @@ CNOT 2 3
            (make-array 4
                        :element-type '(complex double-float)
                        :initial-contents (loop :for i :below 4
-                                               :collect (magicl:ref m i j))))
+                                               :collect (magicl:tref m i j))))
          (build-state-prep (source-wf target-wf)
            (make-instance 'quil::state-prep-application
                           :operator (named-operator "STATE-PREP")
@@ -131,21 +131,18 @@ CNOT 2 3
 
 (deftest test-schmidt-decomposition ()
   "Check that a random wavefunction can be reconstructed from its SCHMIDT-DECOMPOSITION."
-  (flet ((matrix-column (m i)
-           (magicl::slice m
-                          0 (magicl:matrix-rows m)
-                          i (1+ i))))
-    (let* ((random-wf (quil::random-wavefunction 4)))
-      (multiple-value-bind (c U V) (quil::schmidt-decomposition random-wf 2 2)
-        (let* ((schmidt-terms (loop :for i :from 0 :below 4
-                                    :collect (magicl:scale (aref c i)
-                                                           (magicl::kron
-                                                            (matrix-column U i)
-                                                            (matrix-column V i)))))
-               (reconstructed-wf (apply #'magicl:add-matrix schmidt-terms)))
-          ;; adjust for column major nonsense
-          (is (quil::matrix-equality reconstructed-wf
-                                     (wf-to-matrix random-wf))))))))
+  (let* ((random-wf (quil::random-wavefunction 4)))
+    (multiple-value-bind (c U V) (quil::schmidt-decomposition random-wf 2 2)
+      (let* ((schmidt-terms (loop :for i :from 0 :below 4
+                                  :collect (magicl:scale (magicl:kron
+                                                          (magicl:column U i)
+                                                          (magicl:column V i))
+                                                         (aref c i))))
+             (reconstructed-wf (reduce #'magicl:+ schmidt-terms)))
+        ;; adjust for column major nonsense
+        (is (magicl:= reconstructed-wf
+                      (wf-to-matrix random-wf)
+                      quil::+double-comparison-threshold-loose+))))))
 
 (deftest test-aqvm-unlink-on-10Q ()
   (let ((quil::*aqvm-correlation-threshold* 4)

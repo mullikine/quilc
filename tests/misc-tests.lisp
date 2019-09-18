@@ -50,8 +50,8 @@
                (format s "~%"))
              (format s "TEST ~{~D ~}" (a:iota qubit-count))))
          (parsed-prog (quil::parse-quil program-string)))
-    (is (quil::matrix-equality (magicl:make-identity-matrix (expt 2 qubit-count))
-                               (quil::make-matrix-from-quil (coerce (parsed-program-executable-code parsed-prog) 'list))))))
+    (is (magicl:= (let ((size (expt 2 qubit-count))) (magicl:deye #C(1d0 0d0) (list size size)))
+                  (quil::make-matrix-from-quil (coerce (parsed-program-executable-code parsed-prog) 'list))))))
 
 (defclass transformable-thing (quil::transformable)
   ((data

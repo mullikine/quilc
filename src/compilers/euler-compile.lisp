@@ -22,22 +22,22 @@
   (check-type prefix-quil a:proper-list)
   (a:with-gensyms (prefix-matrix postfix-matrix u0 u1 v0 v1 angles)
     `(let* ((,prefix-matrix (make-matrix-from-quil ,prefix-quil))
-            (,postfix-matrix (magicl::conjugate-transpose ,prefix-matrix)))
+            (,postfix-matrix (magicl:conjugate-transpose ,prefix-matrix)))
        (declare (ignorable ,prefix-matrix ,postfix-matrix))
        (define-compiler ,name ((instr (_ _ q)))
          (let ((m ,(if prefix-quil
-                       `(m* ,postfix-matrix (gate-matrix instr) ,prefix-matrix)
+                       `(magicl:@ (magicl:@ ,postfix-matrix (gate-matrix instr)) ,prefix-matrix) ;; TODO: Change this to allow more than 2 args
                        `(gate-matrix instr))))
            (multiple-value-bind (,u0 ,u1 ,v0 ,v1 ,angles) (magicl:lapack-csd m 1 1)
              (inst ,outer-gate `(,(* ,outer-prefactor
-                                     (- (phase (magicl:ref ,v1 0 0))
-                                        (phase (magicl:ref ,v0 0 0)))))
+                                     (- (phase (magicl:tref ,v1 0 0))
+                                        (phase (magicl:tref ,v0 0 0)))))
                    q)
              (inst ,inner-gate `(,(* ,inner-prefactor 2 (first ,angles)))
                    q)
              (inst ,outer-gate `(,(* ,outer-prefactor
-				     (- (phase (magicl:ref ,u1 0 0))
-					(phase (magicl:ref ,u0 0 0)))))
+				     (- (phase (magicl:tref ,u1 0 0))
+					(phase (magicl:tref ,u0 0 0)))))
 		   q)))))))
 
 (define-euler-compiler euler-YXY-compiler

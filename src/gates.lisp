@@ -24,7 +24,7 @@
   (:documentation "The dimension of the space that the gate acts on.")
   (:method ((gate magicl:matrix))
     (assert (magicl:square-matrix-p gate))
-    (magicl:matrix-rows gate)))
+    (magicl:nrows gate)))
 
 
 (define-condition unknown-gate-parameter (error)
@@ -50,7 +50,7 @@
                ((controlled-operator o)
                 (let ((summand (recurse o parameters)))
                   (magicl:direct-sum
-                   (magicl:make-identity-matrix (gate-dimension summand))
+                   (magicl:deye #C(1d0 0d0) (gate-dimension summand))
                    summand)))
                ((dagger-operator o)
                 (magicl:dagger (recurse o parameters)))
@@ -109,15 +109,15 @@
 (defmethod initialize-instance :after ((gate simple-gate) &key)
   (with-slots (matrix) gate
     (assert (and (magicl:square-matrix-p matrix)
-                 (positive-power-of-two-p (magicl:matrix-rows matrix)))
+                 (positive-power-of-two-p (magicl:nrows matrix)))
             (matrix)
             "MATRIX must be square whose dimension is a positive power of two.~@
              Actual dimensions are ~D x ~D."
-            (magicl:matrix-rows matrix)
-            (magicl:matrix-cols matrix))))
+            (magicl:nrows matrix)
+            (magicl:ncols matrix))))
 
 (defmethod gate-dimension ((gate simple-gate))
-  (magicl:matrix-rows (simple-gate-matrix gate)))
+  (magicl:nrows (simple-gate-matrix gate)))
 
 (defmethod gate-matrix ((gate simple-gate) &rest parameters)
   (assert (null parameters))
@@ -144,10 +144,11 @@
 (defmethod gate-matrix ((gate permutation-gate) &rest parameters)
   (assert (null parameters))
   (let* ((d (gate-dimension gate))
-         (m (magicl:make-zero-matrix d d)))
+         (m (magicl:const 0 (list d d)
+                          :type '(complex double-float))))
     (map nil (let ((row -1))
                (lambda (col)
-                 (setf (magicl:ref m (incf row) col) #C(1.0d0 0.0d0))))
+                 (setf (magicl:tref m (incf row) col) #C(1.0d0 0.0d0))))
          (permutation-gate-permutation gate))
     m))
 
@@ -199,8 +200,9 @@
            :documentation "The targeted gate of a single qubit control.")))
 
 (defmethod gate-matrix ((gate controlled-gate) &rest parameters)
-  (let ((target (target gate)))
-    (magicl:direct-sum (magicl:make-identity-matrix (gate-dimension target))
+  (let* ((target (target gate))
+         (dim (gate-dimension target)))
+    (magicl:direct-sum (magicl:deye #C(1d0 0d0) (list dim dim))
                        (apply #'gate-matrix target parameters))))
 
 (defmethod gate-dimension ((gate controlled-gate))
@@ -332,7 +334,8 @@
          (dim (isqrt (length entries))))
     (make-instance 'simple-gate
                    :name name
-                   :matrix (make-row-major-matrix dim dim entries))))
+                   :matrix (magicl:from-list entries (list dim dim)
+                                             :type '(complex double-float)))))
 
 (defmethod gate-definition-to-gate ((gate-def permutation-gate-definition))
   (let ((name (gate-definition-name gate-def))
@@ -345,7 +348,8 @@
   (flet ((lambda-form (params dimension entries)
            `(lambda ,params
               (declare (ignorable ,@params))
-              (make-row-major-matrix ,dimension ,dimension (list ,@entries)))))
+              (magicl:from-list (list ,@entries) (list ,dimension ,dimension)
+                                :type '(complex double-float)))))
     (let* ((name (gate-definition-name gate-def))
            (entries (gate-definition-entries gate-def))
            (params (gate-definition-parameters gate-def))
@@ -364,7 +368,7 @@
   (check-type m magicl:matrix)
   (check-type instr application)
   (a:when-let ((defn (gate-matrix instr)))
-    (let* ((mat-size (ilog2 (magicl:matrix-rows m)))
+    (let* ((mat-size (ilog2 (magicl:nrows m)))
            (size (max mat-size
                       (apply #'max
                              (map 'list (lambda (x) (1+ (qubit-index x)))
@@ -378,7 +382,7 @@
                                     size
                                     (a:iota mat-size :start (1- mat-size) :step -1))
                   m)))
-      (magicl:multiply-complex-matrices mat m))))
+      (magicl:@ mat m))))
 
 (defun make-matrix-from-quil (instruction-list &key (relabeling #'identity))
   "If possible, create a matrix out of the instructions INSTRUCTION-LIST using the optional function RELABELING that maps an input qubit index to an output qubit index. If one can't be created, then return NIL.
@@ -394,7 +398,7 @@ or equivalently as
     C * B * A
 
 as matrices."
-  (let ((u (magicl:diag 1 1 '(1d0))))
+  (let ((u (magicl:deye #C(1d0 0d0) '(1 1))))
     (dolist (instr instruction-list u)
       (assert (not (null u)))
       ;; TODO: What to do about other quantum-state-transitioning
@@ -419,12 +423,13 @@ as matrices."
   (check-type n integer)
   (let* ((width (expt 2 n))
          (mask (- -1 (loop :for l :in lines :sum (expt 2 l))))
-         (out-mat (magicl:make-zero-matrix width width)))
+         (out-mat (magicl:const 0 (list width width)
+                                :type '(complex double-float))))
     (dotimes (i width)
       (dotimes (j width)
         (if (= (logand mask i) (logand mask j))
-            (setf (magicl:ref out-mat i j)
-                  (magicl:ref gate-mat
+            (setf (magicl:tref out-mat i j)
+                  (magicl:tref gate-mat
                               (loop :for r :below (length lines) :sum
                                  (if (logbitp (nth r lines) i)
                                      (ash 1 (- (length lines) 1 r))
@@ -455,7 +460,7 @@ or equivalently as
     C * B * A
 
 as matrices."
-  (let ((u (magicl:diag 1 1 '(1d0)))
+  (let ((u (magicl:deye #C(1d0 0d0) '(1 1)))
         (qubits (list)))
     (dolist (instr instructions)
       (let ((new-qubits (set-difference (mapcar #'qubit-index (application-arguments instr))
@@ -467,7 +472,7 @@ as matrices."
                                                      :start (1- (length qubits))
                                                      :step -1)))
           (setf qubits (append new-qubits qubits)))
-        (setf u (magicl:multiply-complex-matrices
+        (setf u (magicl:@
                  (kq-gate-on-lines (gate-matrix instr)
                                    (length qubits)
                                    (mapcar (lambda (q)

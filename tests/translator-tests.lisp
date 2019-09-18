@@ -5,23 +5,23 @@
 (in-package #:cl-quil-tests)
 
 (defun print-matrix (mat &optional (stream *standard-output*))
-  (dotimes (i (magicl:matrix-rows mat))
-    (dotimes (j (magicl:matrix-cols mat))
-      (let ((z (magicl:ref mat i j)))
+  (dotimes (i (magicl:nrows mat))
+    (dotimes (j (magicl:ncols mat))
+      (let ((z (magicl:tref mat i j)))
         (when (= j 0)
           (format stream "# "))
         (format stream "~6,3F+~6,3Fj" (realpart z) (imagpart z))
-        (when (= j (1- (magicl:matrix-cols mat)))
+        (when (= j (1- (magicl:ncols mat)))
           (format stream "~%")
           (format stream ", "))))))
 
 (defun rescale-matrix-against-reference (mat ref-mat)
   (magicl:scale
    (cond
-     ((> (abs (magicl:ref mat 0 0)) 1/32) (/ (magicl:ref ref-mat 0 0) (magicl:ref mat 0 0)))
-     ((> (abs (magicl:ref mat 1 0)) 1/32) (/ (magicl:ref ref-mat 1 0) (magicl:ref mat 1 0)))
-     ((> (abs (magicl:ref mat 2 0)) 1/32) (/ (magicl:ref ref-mat 2 0) (magicl:ref mat 2 0)))
-     ((> (abs (magicl:ref mat 3 0)) 1/32) (/ (magicl:ref ref-mat 3 0) (magicl:ref mat 3 0)))
+     ((> (abs (magicl:tref mat 0 0)) 1/32) (/ (magicl:tref ref-mat 0 0) (magicl:tref mat 0 0)))
+     ((> (abs (magicl:tref mat 1 0)) 1/32) (/ (magicl:tref ref-mat 1 0) (magicl:tref mat 1 0)))
+     ((> (abs (magicl:tref mat 2 0)) 1/32) (/ (magicl:tref ref-mat 2 0) (magicl:tref mat 2 0)))
+     ((> (abs (magicl:tref mat 3 0)) 1/32) (/ (magicl:tref ref-mat 3 0) (magicl:tref mat 3 0)))
      (t (error "Matrix has a degenerate column.")))
    mat))
 
@@ -265,8 +265,8 @@
                (mat (cl-quil::make-matrix-from-quil (funcall expander instr
                                                              :context (quil::make-compilation-context
                                                                        :chip-specification chip-spec)))))
-          (is (cl-quil::matrix-equality ref-mat
-                                        (cl-quil::scale-out-matrix-phases mat ref-mat))))))))
+          (is (magicl:= ref-mat
+                        (cl-quil::scale-out-matrix-phases mat ref-mat))))))))
 
 (defun %build-disconnected-chip-spec ()
   ;; chip spec with disconnected qubits 0 <-> 1 and 2 <-> 3
