@@ -107,8 +107,7 @@ as needed so that they are the same size."
   ;; rewiring. this is somewhat complicated by the fact that rewirings
   ;; when we enter a block and when we exit a block may differ.
   (loop
-    :with mat := (magicl:const 1 '(1 1)
-                               :type '(complex double-float))
+    :with mat := (magicl:const #C(1d0 0d0) '(1 1))
     :with rewiring := (make-rewiring 1)
     :for instr :across (parsed-program-executable-code pp)
     :do (progn

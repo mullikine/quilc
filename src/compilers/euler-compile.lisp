@@ -26,7 +26,7 @@
        (declare (ignorable ,prefix-matrix ,postfix-matrix))
        (define-compiler ,name ((instr (_ _ q)))
          (let ((m ,(if prefix-quil
-                       `(magicl:@ (magicl:@ ,postfix-matrix (gate-matrix instr)) ,prefix-matrix) ;; TODO: Change this to allow more than 2 args
+                       `(magicl:@ ,postfix-matrix (gate-matrix instr) ,prefix-matrix)
                        `(gate-matrix instr))))
            (multiple-value-bind (,u0 ,u1 ,v0 ,v1 ,angles) (magicl:lapack-csd m 1 1)
              (inst ,outer-gate `(,(* ,outer-prefactor

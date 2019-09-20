@@ -79,7 +79,7 @@ WARNING: The default will work for instances of \"idiomatic\" classes that aren'
 (defun operator= (mat1 mat2)
   (multiple-value-bind (mat1 mat2) (matrix-rescale mat1 mat2)
     (setf mat1 (scale-out-matrix-phases mat1 mat2))
-    (magicl:= mat1 mat2)))
+    (magicl:= mat1 mat2 +double-comparison-threshold-loose+)))
 
 (declaim (special *enable-state-prep-compression*)) ; forward declare
 (defun matrix-equals-dwim (mat1 mat2)

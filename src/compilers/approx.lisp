@@ -264,7 +264,7 @@ Three self-explanatory restarts are offered: TRY-AGAIN, and GIVE-UP-COMPILATION.
     (values a d b)))
 
 (defun make-signed-permutation-matrix (sigma &optional (signs (list 1 1 1 1)))
-  (let ((o (magicl:const #C(0d0 0d0) '(4 4))))
+  (let ((o (magicl:empty '(4 4) :type '(complex double-float))))
     (loop :for i :below 4
           :for j := (1- (cl-permutation:perm-eval sigma (1+ i)))
           :for sign :in signs
@@ -287,7 +287,7 @@ Three self-explanatory restarts are offered: TRY-AGAIN, and GIVE-UP-COMPILATION.
   ;; we return the SU(2) (x) SU(2) versions of the triple products, as on the
   ;; last line, as well as the fidelity as a values triple.
   (multiple-value-bind (aprime dprime bprime)
-      (orthogonal-decomposition  (magicl:scale mprime (expt (magicl:det mprime) -1/4)))
+      (orthogonal-decomposition (magicl:scale mprime (expt (magicl:det mprime) -1/4)))
     (let (o
           oT
           (d-as-list (magicl:diag d))

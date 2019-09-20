@@ -398,7 +398,7 @@ or equivalently as
     C * B * A
 
 as matrices."
-  (let ((u (magicl:deye #C(1d0 0d0) '(1 1))))
+  (let ((u (magicl:const #C(1d0 0d0) '(1 1))))
     (dolist (instr instruction-list u)
       (assert (not (null u)))
       ;; TODO: What to do about other quantum-state-transitioning
@@ -423,7 +423,7 @@ as matrices."
   (check-type n integer)
   (let* ((width (expt 2 n))
          (mask (- -1 (loop :for l :in lines :sum (expt 2 l))))
-         (out-mat (magicl:const 0 (list width width)
+         (out-mat (magicl:empty (list width width)
                                 :type '(complex double-float))))
     (dotimes (i width)
       (dotimes (j width)
