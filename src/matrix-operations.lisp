@@ -294,14 +294,6 @@ as needed so that they are the same size."
            (new-guess (+ guess (/ (- y0) d))))
       (find-root f new-guess (1- depth-bound)))))
 
-(defun matrix-realpart (m)
-  "Returns a matrix X_ij = Re(M_ij)."
-  (magicl:map #'realpart m))
-
-(defun matrix-imagpart (m)
-  "Returns a matrix X_ij = Im(M_ij)."
-  (magicl:map #'imagpart m))
-
 ;; TODO I have the feeling we have too many matrix comparison routines.
 (defun check-instructions-matrix-consistency (instrs-from instrs-to &key (relabeling (minimal-standard-relabeling instrs-from instrs-to)))
   "Compare for equality (up to a phase) the matrix representations of INSTRS-TO and INSTRS-FROM (under the appropriate relabeling)."
