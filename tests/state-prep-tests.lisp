@@ -139,7 +139,6 @@ CNOT 2 3
                                                           (magicl:column V i))
                                                          (aref c i))))
              (reconstructed-wf (reduce #'magicl:+ schmidt-terms)))
-        ;; adjust for column major nonsense
         (is (magicl:= reconstructed-wf
                       (wf-to-matrix random-wf)
                       quil::+double-comparison-threshold-loose+))))))

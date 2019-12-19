@@ -512,8 +512,7 @@ Returns a pair (LIST C0 C1) of 2x2 matrices with (C0 (x) C1) SOURCE-WF = TARGET-
     (setf phi (coerce-to-complex-double-vector phi)))
   (let* ((size-a (expt 2 num-a))
          (size-b (expt 2 num-b))
-         ;; tranpose here to make this row-major
-         (reshaped (magicl:transpose (magicl:from-array phi (list size-a size-b)))))
+         (reshaped (magicl:from-array phi (list size-a size-b))))
     (multiple-value-bind (u d vt)
         (magicl:svd reshaped)
       (values (coerce-to-complex-double-vector (magicl:diag d))
